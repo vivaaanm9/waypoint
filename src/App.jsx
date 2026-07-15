@@ -1,122 +1,93 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
-
+import Button from "./components/ui/Button"
+import { Search } from "lucide-react";
+import ErrorState from "./components/ui/ErrorState";
+import Input from "./components/ui/Input";
+import { i } from "framer-motion/client";
+import LoadingSkeleton from "./components/ui/LoadingSkeleton";
+import Select from "./components/ui/Select";
+import Checkbox from "./components/ui/Checkbox";
+import Badge from "./components/ui/Badge";
+import { useState } from "react";
+import Tooltip from "./components/ui/Tooltip";
+import Modal from "./components/ui/Modal";
+import Toast from "./components/ui/Toast";
 function App() {
-  const [count, setCount] = useState(0)
+const [checked, setChecked] = useState(false);
+ const [open, setOpen] = useState(false);
+ const [showToast, setShowToast] = useState(false);
 
-  return (
+ return(
     <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <ErrorState
+    title="No Businesses Found"
+    message="Try changing your search filters."
+/>
+    <Button
+                onClick={() => setShowToast(true)}
+            >
+                Show Toast
+            </Button>
 
-      <div className="ticks"></div>
+            <Toast
+                show={showToast}
+                type="success"
+                message="Business Added Successfully"
+                onClose={() => setShowToast(false)}
+            />
+    <Button leftIcon={<Search size={18} />}>
+    Search
+    </Button>
+  <LoadingSkeleton
+    width="w-14"
+    height="h-14"
+    rounded="rounded-full"
+/>
+    <Input
+    label="Business Name"
+    placeholder="Enter business name"/>
+    <Input
+    placeholder="Search..."
+    leftIcon={<Search size={18} />}
+    error={true}/>
+    <Select
+    label="Business Category"
+    options={[
+        "Restaurant",
+        "Hotel",
+        "Hospital",
+        "Gym",
+        "School"
+    ]}
+/>
+<Tooltip text="Add to Favorites">
+    <button>⭐</button>
+</Tooltip>
+<Checkbox
+    label="Has Website"
+    checked={checked}
+    onChange={(e) => setChecked(e.target.checked)}
+/>
+<Badge variant="danger">
+    Closed
+</Badge>
+<Button
+                onClick={() => setOpen(true)}
+            >
+                Open Modal
+            </Button>
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+            <Modal
+                isOpen={open}
+                onClose={() => setOpen(false)}
+                title="Create Collection"
+            >
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+                <p>
+                    This is the modal content.
+                </p>
+
+            </Modal>
+    </>  
+);
 }
-
 export default App
