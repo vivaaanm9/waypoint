@@ -1,7 +1,6 @@
-import UIShowcase from "./pages/UIShowcase";
-
+import React from "react";
 function App() {
-    return <UIShowcase />;
+
 }
 
 export default App;
