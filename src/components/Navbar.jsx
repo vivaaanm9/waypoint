@@ -1,5 +1,5 @@
 import React from 'react';
-import { MapPin, Compass, Heart, Sun, User } from 'lucide-react';
+import { MapPin, Compass, Heart, Sun, User, BarChart } from 'lucide-react';
 
 export default function Navbar({ activeTab, setActiveTab }) {
   return (
@@ -25,11 +25,12 @@ export default function Navbar({ activeTab, setActiveTab }) {
         </div>
 
         {/* Navigation links */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           {[
             { name: 'Home', icon: Compass },
             { name: 'Search Map', icon: MapPin },
-            { name: 'Favourites', icon: Heart }
+            { name: 'Favourites', icon: Heart },
+            { name: 'Dashboard', icon: BarChart }
           ].map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.name;
@@ -37,13 +38,13 @@ export default function Navbar({ activeTab, setActiveTab }) {
               <button
                 key={item.name}
                 onClick={() => setActiveTab(item.name)}
-                className={`flex items-center gap-2 px-5.5 py-3 rounded-xl text-sm font-black transition-all duration-200 cursor-pointer ${
+                className={`flex items-center gap-2 px-4.5 py-3 rounded-xl text-xs sm:text-sm font-black transition-all duration-200 cursor-pointer ${
                   isActive 
                     ? 'bg-brand-accent text-slate-800 shadow-xs' 
-                    : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+                    : 'text-slate-505 hover:text-slate-800 hover:bg-slate-50'
                 }`}
               >
-                <Icon className="w-4.5 h-4.5" />
+                <Icon className="w-4 h-4" />
                 <span className="hidden sm:inline">{item.name}</span>
               </button>
             );
