@@ -4,9 +4,13 @@ import CollectionDetails from "./pages/CollectionDetails";
 import Favorites from "./pages/Favorites";
 import { DashboardPage } from "./pages/DashboardPage";
 import { DiscoveryPage } from "./pages/DiscoveryPage";
+import { WaypointProvider } from "./context/WaypointContext";
+
 function App() {
     return( 
-        <DiscoveryPage/>
+        <WaypointProvider>
+            <DiscoveryPage/>
+        </WaypointProvider>
     );
 }
 

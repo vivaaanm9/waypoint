@@ -19,19 +19,51 @@ export const DiscoveryPage = () => {
     if (!query) return;
     setIsLoading(true);
     setHasSearched(true);
+
+    let parsedKeyword = '';
+    let parsedLocation = query;
+
+    const inAtNearMatch = query.match(/(.+)\s+(in|at|near)\s+(.+)/i);
+    const commaMatch = query.includes(',') ? query.split(',') : null;
+
+    if (inAtNearMatch) {
+      parsedKeyword = inAtNearMatch[1].trim();
+      parsedLocation = inAtNearMatch[3].trim();
+    } else if (commaMatch && commaMatch.length >= 2) {
+      parsedKeyword = commaMatch[0].trim();
+      parsedLocation = commaMatch.slice(1).join(',').trim();
+    }
     
     // 1. Geocode location
-    const locationInfo = await searchLocation(query);
+    const locationInfo = await searchLocation(parsedLocation);
     
     if (locationInfo) {
       setSearchLocation({ lat: locationInfo.lat, lng: locationInfo.lng, name: locationInfo.displayName });
       
       // 2. Fetch businesses
-      const liveData = await fetchBusinessesAround(locationInfo.lat, locationInfo.lng);
+      let liveData = await fetchBusinessesAround(locationInfo.lat, locationInfo.lng);
+
+      if (parsedKeyword) {
+        const filtered = liveData.filter(b => 
+          b.name.toLowerCase().includes(parsedKeyword.toLowerCase()) ||
+          b.category.toLowerCase().includes(parsedKeyword.toLowerCase())
+        );
+        if (filtered.length > 0) {
+          liveData = filtered;
+        }
+      }
+      
       setBusinesses(liveData);
     } else {
-      // Location not found
-      setBusinesses([]);
+      // Fallback: Try geocoding the entire query directly
+      const fallbackInfo = await searchLocation(query);
+      if (fallbackInfo) {
+        setSearchLocation({ lat: fallbackInfo.lat, lng: fallbackInfo.lng, name: fallbackInfo.displayName });
+        const liveData = await fetchBusinessesAround(fallbackInfo.lat, fallbackInfo.lng);
+        setBusinesses(liveData);
+      } else {
+        setBusinesses([]);
+      }
     }
     
     setIsLoading(false);
