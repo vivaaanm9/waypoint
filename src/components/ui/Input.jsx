@@ -1,30 +1,72 @@
 import React from 'react';
 
+const baseClasses = `
+w-full
+rounded-xl
+border
+border-[#E2E8F0]
+bg-white
+text-[#0F172A]
+placeholder:text-[#64748B]
+outline-none
+transition-all
+duration-300
+focus:border-[#4F46E5]
+focus:ring-2
+focus:ring-[#4F46E5]/20
+disabled:bg-gray-100
+disabled:cursor-not-allowed
+disabled:opacity-60
+`;
+
+const sizes = {
+  sm: "px-3 py-2 text-sm",
+  md: "px-4 py-3 text-base",
+  lg: "px-5 py-4 text-lg",
+};
+
 export default function Input({
   label,
   error,
   type = 'text',
+  size = 'md',
+  leftIcon,
   className = '',
   ...props
 }) {
+  const inputClasses = `
+    ${baseClasses}
+    ${sizes[size] || sizes.md}
+    ${leftIcon ? "pl-10" : ""}
+    ${
+      error
+        ? "border-[#EF4444] focus:border-[#EF4444] focus:ring-[#EF4444]/20 border-rose-350 focus:border-rose-500"
+        : ""
+    }
+    ${className}
+  `;
+
   return (
     <div className="flex flex-col space-y-1.5 w-full select-none">
       {label && (
-        <label className="text-[10px] font-extrabold text-slate-450 uppercase tracking-widest leading-none pl-0.5">
+        <label className="text-sm font-medium text-[#0F172A] pl-0.5">
           {label}
         </label>
       )}
-      <input
-        type={type}
-        className={`w-full px-4 py-3 bg-slate-50/50 border rounded-xl text-xs font-bold text-slate-700 placeholder-slate-400 focus:outline-none focus:bg-white focus:shadow-xs transition-all duration-200 ${
-          error 
-            ? 'border-rose-350 focus:border-rose-500 focus:ring-1 focus:ring-rose-500/20' 
-            : 'border-brand-border/40 focus:border-brand-steel focus:ring-1 focus:ring-brand-steel/15'
-        } ${className}`}
-        {...props}
-      />
+      <div className="relative">
+        {leftIcon && (
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[#64748B]">
+            {leftIcon}
+          </div>
+        )}
+        <input
+          type={type}
+          className={inputClasses}
+          {...props}
+        />
+      </div>
       {error && (
-        <span className="text-[9px] text-rose-500 font-bold pl-1 animate-[fadeIn_0.15s_ease-out]">
+        <span className="text-xs text-[#EF4444] pl-1 animate-[fadeIn_0.15s_ease-out]">
           {error}
         </span>
       )}

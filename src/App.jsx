@@ -5,7 +5,15 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import HomePage from './pages/HomePage';
 import SearchPage from './pages/SearchPage';
-// Context
+
+// Import remote team pages
+import { DiscoveryPage } from './pages/DiscoveryPage';
+import { DashboardPage } from './pages/DashboardPage';
+import FavoritesPage from './pages/Favorites';
+import ExportCenter from './pages/ExportCenter';
+import UIShowcase from './pages/UIShowcase';
+
+// Context & Hooks
 import { useFavorites } from './context/FavoritesContext';
 
 // Database place coordinates
@@ -101,8 +109,6 @@ export default function App() {
   // Dynamic loading pagination
   const [visibleCount, setVisibleCount] = useState(3);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-
-
 
   // Reset visibility count on search or filter changes
   useEffect(() => {
@@ -210,7 +216,7 @@ export default function App() {
         const address = item.address || {};
         const country = address.country || '';
         const state = address.state || address.region || '';
-        const city = address.city || address.town || address.village || address.suburb || '';
+        const city = address.city || address.address.town || address.address.village || address.address.suburb || '';
         const pincode = address.postcode || '';
         const locality = address.suburb || address.neighbourhood || address.road || '';
 
@@ -249,43 +255,59 @@ export default function App() {
       return parsed;
     };
 
-    const searchUrl = `https://nominatim.openstreetmap.org/search?format=json&limit=50&q=${encodeURIComponent(cleanQuery)}&lat=${centerBiasLat}&lon=${centerBiasLng}&viewbox=${lngMin},${latMin},${lngMax},${latMax}&bounded=0&addressdetails=1`;
-
-    fetch(searchUrl, { headers: { 'Accept-Language': 'en' } })
-      .then(res => res.json())
-      .then(data => {
-        if (Array.isArray(data) && data.length > 0) {
-          const parsed = processOsmData(data);
-          setOsmPlaces(parsed);
-          if (searchTerm.trim() !== '') {
-            setMapCenter(parsed[0].coordinates);
-            setMapZoom(15);
+    const delayDebounce = setTimeout(() => {
+      fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(cleanQuery)}&format=json&addressdetails=1&limit=15&viewbox=${lngMin},${latMax},${lngMax},${latMin}&bounded=1`)
+        .then(res => res.json())
+        .then(data => {
+          if (Array.isArray(data) && data.length > 0) {
+            setOsmPlaces(processOsmData(data));
+          } else {
+            // Search globally if bounded search has no results
+            fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(cleanQuery)}&format=json&addressdetails=1&limit=15`)
+              .then(res => res.json())
+              .then(globalData => {
+                if (Array.isArray(globalData) && globalData.length > 0) {
+                  setOsmPlaces(processOsmData(globalData));
+                } else {
+                  setOsmPlaces([]);
+                }
+              })
+              .catch(err => {
+                console.error("OSM Global lookup failed", err);
+                setOsmPlaces([]);
+              });
           }
-        } else {
+        })
+        .catch(err => {
+          console.error("OSM Bounded lookup failed", err);
           setOsmPlaces([]);
-        }
-        setIsSearchingRemote(false);
-      })
-      .catch(err => {
-        console.warn("OSM search failed, generating mock results locally...", err);
-        const localMockPlaces = MOCK_PLACES.map((p, idx) => {
-          const offsetLat = (Math.random() - 0.5) * 0.02;
-          const offsetLng = (Math.random() - 0.5) * 0.02;
-          return {
-            ...p,
-            id: `local-fallback-${idx}`,
-            coordinates: [centerBiasLat + offsetLat, centerBiasLng + offsetLng],
-            address: `${p.address.split(',')[0]}, near current location`,
-            city: 'Current Location',
-            country: 'Global'
-          };
+        })
+        .finally(() => {
+          setIsSearchingRemote(false);
         });
-        setOsmPlaces(localMockPlaces);
-        setIsSearchingRemote(false);
-      });
-  }, [searchTerm, userCoords, mapCenter, filters.category]);
+    }, 800);
 
-  // Locate user using browser Geolocation API
+    return () => clearTimeout(delayDebounce);
+  }, [searchTerm, userCoords, filters.category]);
+
+  const handlePlaceSelect = (place) => {
+    setSelectedPlace(place);
+    setMapCenter(place.coordinates);
+    setMapZoom(16);
+    setShowRoute(false);
+  };
+
+  const handleAreaSelect = (lat, lng, name) => {
+    const coords = [parseFloat(lat), parseFloat(lng)];
+    setMapCenter(coords);
+    setMapZoom(14);
+    setSelectedPlace(null);
+    setShowRoute(false);
+    if (name) {
+      setSearchTerm(name);
+    }
+  };
+
   const handleLocateUser = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -294,52 +316,16 @@ export default function App() {
           setUserCoords(coords);
           setMapCenter(coords);
           setMapZoom(15);
-
-          // Reverse geocode user country
-          fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${coords[0]}&lon=${coords[1]}&zoom=5`)
-            .then(res => res.json())
-            .then(reverseData => {
-              if (reverseData.address && reverseData.address.country_code) {
-                setUserCountryCode(reverseData.address.country_code);
-              }
-            })
-            .catch(err => console.warn("Locate user reverse geocoding failed", err));
+          setSelectedPlace(null);
+          setShowRoute(false);
         },
-        (error) => {
-          console.warn("Geolocation permission denied, falling back to Times Square coordinate.");
-          const fallback = [40.7500, -73.9910];
-          setUserCoords(fallback);
-          setMapCenter(fallback);
-          setMapZoom(15);
-          alert("Geolocation permission denied. Simulation coordinates active.");
-        }
+        () => alert("Unable to retrieve your current location. Please verify permissions.")
       );
     } else {
-      const fallback = [40.7500, -73.9910];
-      setUserCoords(fallback);
-      setMapCenter(fallback);
-      setMapZoom(15);
+      alert("Geolocation is not supported by your browser.");
     }
   };
 
-  // Sync place selection
-  const handlePlaceSelect = (place) => {
-    setSelectedPlace(place);
-    setMapCenter(place.coordinates);
-    setMapZoom(16);
-    setShowRoute(false);
-  };
-
-
-
-  const handleAreaSelect = (coords, label) => {
-    setUserCoords(coords);
-    setMapCenter(coords);
-    setMapZoom(15);
-    setSearchTerm('');
-  };
-
-  // Reset filters
   const handleResetFilters = () => {
     setSearchTerm('');
     setFilters({
@@ -383,8 +369,8 @@ export default function App() {
     // 1. Category Filter
     if (filters.category !== 'All' && place.category !== filters.category) return false;
 
-    // 2. Favourites Tab checklist
-    if (isFavTab && !favorites.includes(place.id)) return false;
+    // 2. Favourites Tab checklist using the hybrid isFavorite function
+    if (isFavTab && !isFavorite(place.id)) return false;
 
     // 3. Proximity geofencing radius filter
     if (filters.isGeofenceEnabled && userCoords && place.coordinates) {
@@ -433,7 +419,7 @@ export default function App() {
 
       <main className="flex-grow flex flex-col w-full relative z-10">
         
-        {/* TAB 1: HOME PAGE */}
+        {/* TAB 1: HOME PAGE (Local) */}
         {activeTab === 'Home' && (
           <HomePage
             searchTerm={searchTerm}
@@ -446,7 +432,7 @@ export default function App() {
           />
         )}
 
-        {/* TAB 2, 3 & 4: MAP / EXPLORER / FAVOURITES / DASHBOARD */}
+        {/* TAB 2, 3 & 4: MAP / EXPLORER / FAVOURITES / DASHBOARD (Local) */}
         {(activeTab === 'Search Map' || activeTab === 'Favourites' || activeTab === 'Dashboard') && (
           <SearchPage
             activeTab={activeTab}
@@ -489,14 +475,31 @@ export default function App() {
           />
         )}
 
+        {/* TEAM TABS (Remote) */}
+        {activeTab === 'Discovery' && (
+          <DiscoveryPage />
+        )}
 
+        {activeTab === 'Collections' && (
+          <FavoritesPage />
+        )}
+
+        {activeTab === 'Dashboard (Charts)' && (
+          <DashboardPage />
+        )}
+
+        {activeTab === 'Export Center' && (
+          <ExportCenter />
+        )}
+
+        {activeTab === 'UI Showcase' && (
+          <UIShowcase />
+        )}
 
       </main>
 
       {/* Component 2: Footer */}
       <Footer setActiveTab={setActiveTab} />
-
-
 
     </div>
   );

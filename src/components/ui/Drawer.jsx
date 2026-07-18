@@ -36,7 +36,7 @@ export default function Drawer({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-[200]"
+            className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-[200] bg-black/40"
           />
 
           {/* Drawer Body */}
@@ -45,21 +45,23 @@ export default function Drawer({
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 220 }}
-            className={`fixed inset-y-0 right-0 w-full ${sizeClasses[size]} bg-white shadow-2xl z-[210] flex flex-col`}
+            className={`fixed inset-y-0 right-0 w-full ${sizeClasses[size] || 'max-w-md'} bg-white shadow-2xl z-[210] flex flex-col`}
           >
             {/* Header */}
-            <div className="px-6 py-5.5 border-b border-slate-100 flex items-center justify-between shrink-0 select-none">
-              <h3 className="font-black text-slate-800 text-sm uppercase tracking-wider">{title || 'Details'}</h3>
+            <div className="px-6 py-5 border-b border-slate-100 border-[#E2E8F0] flex items-center justify-between shrink-0 select-none">
+              <h3 className="font-semibold text-slate-800 text-[#0F172A] text-lg uppercase tracking-wider">
+                {title || 'Details'}
+              </h3>
               <button
                 onClick={onClose}
-                className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
+                className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer hover:bg-gray-100"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Scrollable Content */}
-            <div className="flex-grow overflow-y-auto p-6 scrollbar-thin">
+            <div className="flex-1 overflow-y-auto p-6 scrollbar-thin">
               {children}
             </div>
           </motion.div>

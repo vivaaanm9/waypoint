@@ -10,12 +10,12 @@ export default function ErrorState({
 }) {
   return (
     <div className={`w-full py-12 px-6 flex flex-col items-center justify-center text-center space-y-4 bg-rose-50/30 rounded-3xl border border-dashed border-rose-250 select-none animate-[fadeIn_0.2s_ease-out] ${className}`}>
-      <div className="w-12 h-12 rounded-full bg-white shadow-xs border border-rose-100 flex items-center justify-center text-rose-500">
-        <AlertCircle className="w-6 h-6" />
+      <div className="w-16 h-16 rounded-full bg-red-100 text-[#EF4444] flex items-center justify-center shadow-xs">
+        <AlertCircle className="w-8 h-8" />
       </div>
-      <div className="space-y-1">
-        <h4 className="text-sm font-black uppercase tracking-wider text-slate-800">{title}</h4>
-        <p className="text-xs text-slate-400 font-semibold max-w-sm">
+      <div className="space-y-2">
+        <h4 className="text-xl font-semibold text-[#0F172A]">{title}</h4>
+        <p className="text-sm text-[#64748B] max-w-md mx-auto">
           {message}
         </p>
       </div>
@@ -24,7 +24,7 @@ export default function ErrorState({
           onClick={onRetry}
           variant="outline"
           size="sm"
-          className="flex items-center gap-1.5 border-rose-200 hover:bg-rose-50/50 hover:text-rose-600 text-rose-500 rounded-xl"
+          className="flex items-center gap-1.5 border-rose-200 hover:bg-rose-50/50 hover:text-rose-600 text-[#EF4444] rounded-xl mt-2"
         >
           <RotateCcw className="w-3.5 h-3.5" />
           <span>Retry Request</span>

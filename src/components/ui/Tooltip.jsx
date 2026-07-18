@@ -20,18 +20,36 @@ export default function Tooltip({
 
   return (
     <div 
-      className={`relative inline-block ${className}`}
+      className={`relative inline-flex group ${className}`}
       onMouseEnter={showTooltip}
       onMouseLeave={hideTooltip}
       onFocus={showTooltip}
       onBlur={hideTooltip}
     >
       {children}
-      {active && (
-        <div className={`absolute z-100 ${positionStyles[position]} bg-slate-900/95 text-white text-[9px] font-bold px-2 py-1.5 rounded-lg whitespace-nowrap shadow-md select-none pointer-events-none animate-[fadeIn_0.15s_ease-out]`}>
-          {text}
-        </div>
-      )}
+      
+      {/* Visual tooltip element triggered by React state (for focus/blur accessibility) and group-hover CSS */}
+      <span
+        className={`
+          absolute
+          z-100
+          ${positionStyles[position]}
+          whitespace-nowrap
+          bg-[#0F172A] bg-slate-900/95
+          text-white
+          text-[10px] text-xs
+          font-semibold font-bold
+          px-3 py-2 px-2 py-1.5
+          rounded-lg
+          shadow-md
+          pointer-events-none
+          transition-all
+          duration-300
+          ${active ? 'opacity-100 visible scale-100' : 'opacity-0 invisible scale-95 group-hover:opacity-100 group-hover:visible group-hover:scale-100'}
+        `}
+      >
+        {text}
+      </span>
     </div>
   );
 }
