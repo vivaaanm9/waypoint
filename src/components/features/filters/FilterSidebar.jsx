@@ -39,7 +39,7 @@ export const FilterSidebar = () => {
       <div className="space-y-3">
         <h3 className="text-sm font-semibold text-[#9AA6B2] uppercase tracking-wider">Categories</h3>
         <div className="flex flex-wrap gap-2">
-          {['Restaurant', 'Cafe', 'Healthcare', 'Retail Stores', 'Gyms', 'Service'].map((cat) => (
+          {['Restaurant', 'Cafe', 'Hospital', 'Clinic', 'Retail Store', 'Gym', 'Workspace', 'Service'].map((cat) => (
             <button
               key={cat}
               onClick={() => setFilters((prev) => ({ ...prev, category: prev.category === cat ? null : cat }))}
@@ -103,6 +103,34 @@ export const FilterSidebar = () => {
             } shadow-sm`}
           />
         </button>
+      </div>
+
+      {/* Advanced Features */}
+      <div className="space-y-4 pt-4 border-t border-[#BCCCDC]/30">
+        <h3 className="text-sm font-semibold text-[#9AA6B2] uppercase tracking-wider">Features & Amenities</h3>
+        {[
+          { key: 'wifi', label: 'Free WiFi' },
+          { key: 'parking', label: 'Free Parking' },
+          { key: 'wheelchair', label: 'Wheelchair Access' },
+          { key: 'ac', label: 'Air Conditioning (AC)' },
+          { key: 'verified', label: 'Verified Listing' }
+        ].map((feat) => (
+          <div key={feat.key} className="flex items-center justify-between">
+            <span className="text-xs text-gray-700 font-medium">{feat.label}</span>
+            <button
+              onClick={() => setFilters((prev) => ({ ...prev, [feat.key]: !prev[feat.key] }))}
+              className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none ${
+                filters[feat.key] ? 'bg-blue-600' : 'bg-[#BCCCDC]/40'
+              }`}
+            >
+              <span
+                className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
+                  filters[feat.key] ? 'translate-x-4.5' : 'translate-x-1'
+                } shadow-sm`}
+              />
+            </button>
+          </div>
+        ))}
       </div>
     </aside>
   );
