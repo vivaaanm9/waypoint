@@ -2,36 +2,110 @@ import React, { useState, useEffect } from 'react';
 import { useWaypointContext } from '../context/WaypointContext';
 import { BusinessCard } from '../components/features/business-info/BusinessCard';
 import { BusinessMap } from '../components/features/business-info/BusinessMap';
-import { Search, Map as MapIcon, LayoutGrid, Loader2 } from 'lucide-react';
-import { searchLocation, fetchBusinessesAround } from '../services/api';
+import { Search, Map as MapIcon, LayoutGrid, Loader2, X } from 'lucide-react';
+import { searchLocation, fetchBusinessesAround, fuzzySearch } from '../services/api';
 import { FilterSidebar } from '../components/features/filters/FilterSidebar';
 import { SortDropdown } from '../components/features/filters/SortDropdown';
+import { BusinessDetails } from '../components/features/business-info/BusinessDetails';
 
 export const DiscoveryPage = () => {
-  const { filters, sortBy, setActiveBusinessId, businesses, setBusinesses, isLoading, setIsLoading, searchLocation: currentLoc, setSearchLocation } = useWaypointContext();
+  const { filters, sortBy, activeBusinessId, setActiveBusinessId, businesses, setBusinesses, isLoading, setIsLoading, searchLocation: currentLoc, setSearchLocation, userCoords } = useWaypointContext();
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'map'
   const [hasSearched, setHasSearched] = useState(false);
 
-  // Removed initial load search so results are empty until the user searches
+  // Load local businesses near user coordinates on mount/geolocation
+  useEffect(() => {
+    if (userCoords && businesses.length === 0 && !hasSearched) {
+      setIsLoading(true);
+      fetchBusinessesAround(userCoords[0], userCoords[1])
+        .then((data) => {
+          setBusinesses(data);
+          setIsLoading(false);
+        })
+        .catch((err) => {
+          console.error("Failed to load nearby places on mount", err);
+          setIsLoading(false);
+        });
+    } else if (!userCoords && businesses.length === 0 && !hasSearched) {
+      // Fallback: Seed with Thane, Maharashtra coordinates to ensure instantaneous data representation on launch
+      setIsLoading(true);
+      fetchBusinessesAround(19.2183, 72.9781)
+        .then((data) => {
+          setBusinesses(data);
+          setIsLoading(false);
+        })
+        .catch(() => setIsLoading(false));
+    }
+  }, [userCoords]);
 
   const handleSearch = async (query = searchQuery) => {
     if (!query) return;
     setIsLoading(true);
     setHasSearched(true);
+
+    let parsedKeyword = '';
+    let parsedLocation = query;
+
+    const inAtNearMatch = query.match(/(.+)\s+(in|at|near)\s+(.+)/i);
+    const commaMatch = query.includes(',') ? query.split(',') : null;
+
+    if (inAtNearMatch) {
+      parsedKeyword = inAtNearMatch[1].trim();
+      parsedLocation = inAtNearMatch[3].trim();
+    } else if (commaMatch && commaMatch.length >= 2) {
+      parsedKeyword = commaMatch[0].trim();
+      parsedLocation = commaMatch.slice(1).join(',').trim();
+    } else {
+      if (userCoords) {
+        parsedKeyword = query;
+        parsedLocation = '';
+      }
+    }
+
+    if (parsedLocation === '' && userCoords) {
+      const lat = userCoords[0];
+      const lng = userCoords[1];
+      setSearchLocation({ lat, lng, name: "Nearby" });
+      
+      const liveData = await fetchBusinessesAround(lat, lng);
+      const filtered = fuzzySearch(liveData, parsedKeyword);
+      if (filtered.length > 0) {
+        setBusinesses(filtered);
+      } else {
+        setBusinesses(liveData);
+      }
+      setIsLoading(false);
+      return;
+    }
     
     // 1. Geocode location
-    const locationInfo = await searchLocation(query);
+    const locationInfo = await searchLocation(parsedLocation);
     
     if (locationInfo) {
       setSearchLocation({ lat: locationInfo.lat, lng: locationInfo.lng, name: locationInfo.displayName });
       
       // 2. Fetch businesses
-      const liveData = await fetchBusinessesAround(locationInfo.lat, locationInfo.lng);
+      let liveData = await fetchBusinessesAround(locationInfo.lat, locationInfo.lng);
+
+      if (parsedKeyword) {
+        const filtered = fuzzySearch(liveData, parsedKeyword);
+        if (filtered.length > 0) {
+          liveData = filtered;
+        }
+      }
+      
       setBusinesses(liveData);
     } else {
-      // Location not found
-      setBusinesses([]);
+      // Fallback: Try geocoding the entire query directly
+      const fallbackInfo = await searchLocation(query);
+      if (fallbackInfo) {
+        setSearchLocation({ lat: fallbackInfo.lat, lng: fallbackInfo.lng, name: fallbackInfo.displayName });
+        const liveData = await fetchBusinessesAround(fallbackInfo.lat, fallbackInfo.lng);
+        setBusinesses(liveData);
+      } else {
+        setBusinesses([]);
+      }
     }
     
     setIsLoading(false);
@@ -43,18 +117,34 @@ export const DiscoveryPage = () => {
     }
   };
 
+  const handleSearchArea = async (lat, lng) => {
+    setIsLoading(true);
+    setHasSearched(true);
+    setSearchLocation({ lat, lng, name: `${lat.toFixed(4)}, ${lng.toFixed(4)}` });
+    const liveData = await fetchBusinessesAround(lat, lng);
+    setBusinesses(liveData);
+    setIsLoading(false);
+  };
+
   // Apply filters and sorting to LIVE data
   const filteredBusinesses = businesses.filter((b) => {
     if (filters.category && b.category !== filters.category) return false;
     if (filters.ratingMin && b.rating < filters.ratingMin) return false;
     if (filters.openNow && !b.isOpen) return false;
     if (filters.priceLevel && b.priceLevel !== filters.priceLevel) return false;
+    if (filters.wifi && (!b.amenities || !b.amenities.includes('Free WiFi'))) return false;
+    if (filters.parking && (!b.amenities || !b.amenities.includes('Free Parking'))) return false;
+    if (filters.wheelchair && (!b.amenities || !b.amenities.includes('Wheelchair Accessible'))) return false;
+    if (filters.ac && (!b.amenities || !b.amenities.includes('AC'))) return false;
+    if (filters.verified && !b.isVerified) return false;
     return true;
   }).sort((a, b) => {
     if (sortBy === 'highest_rated') return b.rating - a.rating;
     if (sortBy === 'most_reviewed') return b.reviewCount - a.reviewCount;
     return 0;
   });
+
+  const selectedBusiness = businesses.find(b => b.id === activeBusinessId);
 
   return (
     <div className="min-h-screen p-6 lg:p-8 flex flex-col lg:flex-row gap-8 max-w-[1600px] mx-auto">
@@ -149,11 +239,26 @@ export const DiscoveryPage = () => {
             </div>
           ) : (
             <div className="flex-1 min-h-[600px] w-full rounded-3xl overflow-hidden shadow-sm">
-              <BusinessMap businesses={filteredBusinesses} />
+              <BusinessMap businesses={filteredBusinesses} onSearchArea={handleSearchArea} />
             </div>
           )}
         </div>
       </main>
+
+      {/* Business Details Modal */}
+      {activeBusinessId && selectedBusiness && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl overflow-hidden shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto relative border border-[#BCCCDC]/40">
+            <button 
+              onClick={() => setActiveBusinessId(null)}
+              className="absolute top-4 left-4 z-50 p-2 bg-black/40 backdrop-blur-md text-white hover:bg-black/60 rounded-full transition-all cursor-pointer"
+            >
+              <X size={20} />
+            </button>
+            <BusinessDetails business={selectedBusiness} />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

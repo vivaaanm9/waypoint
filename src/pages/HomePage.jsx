@@ -25,7 +25,7 @@ export default function HomePage({
 
       <div className="px-6 sm:px-8">
         <CategoryCards
-          selectedCategory={filters.category}
+          selectedCategory={filters}
           setSelectedCategory={(cat) => {
             setFilters(prev => ({ ...prev, category: cat }));
             setActiveTab('Search Map');

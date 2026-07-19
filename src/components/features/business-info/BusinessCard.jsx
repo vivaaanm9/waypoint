@@ -1,7 +1,7 @@
 import React from 'react';
-import { Star, MapPin } from 'lucide-react';
+import { Star, MapPin, Heart, Navigation } from 'lucide-react';
 import { PriceLevel } from '../common/PriceLevel';
-
+import { useFavorites } from '../../../context/FavoritesContext';
 
 export const BusinessCard = ({
   id,
@@ -13,8 +13,15 @@ export const BusinessCard = ({
   address,
   imageUrl,
   isOpen,
+  lat,
+  lng,
   onClick,
 }) => {
+  const { toggleFavorite, isFavorite } = useFavorites();
+  const fav = isFavorite(id);
+
+  const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+
   return (
     <div 
       onClick={() => onClick(id)}
@@ -36,12 +43,25 @@ export const BusinessCard = ({
             {category}
           </span>
         </div>
-        <div className="absolute top-3 right-3">
+        
+        {/* Status & Favorite Overlay */}
+        <div className="absolute top-3 right-3 flex items-center gap-2">
           <span className={`px-2.5 py-1 text-xs font-semibold rounded-lg shadow-sm backdrop-blur-md ${
             isOpen ? 'bg-green-100/90 text-green-700' : 'bg-red-100/90 text-red-700'
           }`}>
             {isOpen ? 'Open' : 'Closed'}
           </span>
+          <button 
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleFavorite({ id, name, category, rating, reviewCount, priceLevel, address, imageUrl, isOpen, lat, lng });
+            }}
+            className={`p-1.5 rounded-lg shadow-sm backdrop-blur-md transition-all duration-300 cursor-pointer ${
+              fav ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-white/80 text-gray-400 hover:text-red-500 hover:bg-white'
+            }`}
+          >
+            <Heart size={14} className={fav ? 'fill-current' : ''} />
+          </button>
         </div>
       </div>
 
@@ -61,9 +81,22 @@ export const BusinessCard = ({
           <PriceLevel level={priceLevel} />
         </div>
 
-        <div className="flex items-start gap-2 text-[#9AA6B2]">
+        <div className="flex items-start gap-2 text-[#9AA6B2] mb-3">
           <MapPin size={16} className="mt-0.5 shrink-0" />
           <p className="text-sm line-clamp-2">{address}</p>
+        </div>
+
+        <div className="flex">
+          <a
+            href={googleMapsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-blue-50 text-[#64748B] hover:text-blue-600 rounded-xl text-xs font-semibold border border-slate-200 transition-colors"
+          >
+            <Navigation size={12} className="rotate-45" />
+            Directions
+          </a>
         </div>
       </div>
     </div>
