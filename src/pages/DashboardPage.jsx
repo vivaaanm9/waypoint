@@ -1,6 +1,6 @@
 import React from 'react';
 import { useWaypointContext } from '../context/WaypointContext';
-import { MOCK_PLACES } from '../data/places';
+import { MOCK_BUSINESSES } from '../data/mockData';
 import { StatisticsCard } from '../components/features/dashboard/StatisticsCard';
 import { RatingDistributionChart } from '../components/features/dashboard/RatingDistributionChart';
 import { CategoryDistributionChart } from '../components/features/dashboard/CategoryDistributionChart';
